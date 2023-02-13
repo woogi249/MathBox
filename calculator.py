@@ -5,3 +5,7 @@ def add(a,b):
 def subtract(a, b):
     return a-b
 ## 주석을 추가하였음
+
+#곱하기 내용을 추가하였음
+def multiply(a,b):
+    return a*b
