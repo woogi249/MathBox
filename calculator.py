@@ -9,3 +9,6 @@ def subtract(a, b):
 #곱하기 내용을 추가하였음
 def multiply(a,b):
     return a*b
+
+def divide(a,b):
+    return a/b
