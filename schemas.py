@@ -64,7 +64,6 @@ class RankBoard(BaseModel):
 # Milestone / Alert
 # ---------------------------------------------------------------------------
 
-# 토큰 마일스톤 기준점 (누적 토큰)
 MILESTONES = [
     100_000,
     500_000,
@@ -75,7 +74,7 @@ MILESTONES = [
     100_000_000,
 ]
 
-DAILY_LIMIT = 10_000_000  # 일일 최대 한도 기본값
+DAILY_LIMIT = 10_000_000
 
 
 class AlertType(str, Enum):
@@ -95,13 +94,21 @@ class AlertEvent(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Member management
+# Roles & Member management
 # ---------------------------------------------------------------------------
 
 
+class MemberRole(str, Enum):
+    OWNER = "owner"      # 그룹장 — 전체 관리 권한
+    ADMIN = "admin"      # 부관리자 — 승인/추방 가능
+    MEMBER = "member"    # 일반 멤버
+
+
 class MemberStatus(str, Enum):
-    ACTIVE = "active"
-    LEFT = "left"
+    ACTIVE = "active"    # 활성 멤버
+    PENDING = "pending"  # 참여 신청 대기
+    LEFT = "left"        # 탈퇴
+    KICKED = "kicked"    # 추방됨
 
 
 class MemberInfo(BaseModel):
@@ -111,6 +118,7 @@ class MemberInfo(BaseModel):
     display_name: str = ""
     telegram_chat_id: str = ""
     invited_by: str = ""
+    role: MemberRole = MemberRole.MEMBER
     status: MemberStatus = MemberStatus.ACTIVE
     joined_at: datetime = Field(default_factory=datetime.utcnow)
     left_at: datetime | None = None

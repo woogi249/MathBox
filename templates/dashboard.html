@@ -14,7 +14,6 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; }
 
-  /* Header */
   .header {
     background: var(--surface); border-bottom: 1px solid var(--border);
     padding: 1.2rem 2rem; display: flex; align-items: center; justify-content: space-between;
@@ -26,11 +25,9 @@
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
   .header-right { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; color: var(--muted); }
 
-  /* Layout */
   .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
 
-  /* Stat cards */
   .stat-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     padding: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem;
@@ -39,19 +36,18 @@
   .stat-card .value { font-size: 1.8rem; font-weight: 700; }
   .stat-card .sub { font-size: 0.8rem; color: var(--muted); }
 
-  /* Main grid */
-  .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; }
+  .main-grid { display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; }
   @media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
 
-  /* Ranking table */
   .panel {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
     padding: 1.2rem; overflow: hidden;
   }
   .panel-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .panel-title .badge { font-size: 0.7rem; background: var(--orange); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+
   table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 0.75rem; color: var(--muted); text-transform: uppercase;
-    padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); }
+  th { text-align: left; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); }
   td { padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: rgba(88,166,255,0.04); }
@@ -61,11 +57,10 @@
   .tokens { font-family: 'SF Mono', 'Consolas', monospace; color: var(--accent); font-weight: 600; }
   .time-ago { color: var(--muted); font-size: 0.8rem; }
 
-  /* Bar chart */
   .bar-chart { display: flex; flex-direction: column; gap: 0.6rem; }
   .bar-row { display: flex; align-items: center; gap: 0.6rem; }
   .bar-label { width: 80px; font-size: 0.82rem; font-weight: 600; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-track { flex: 1; height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; position: relative; }
+  .bar-track { flex: 1; height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
     font-size: 0.72rem; font-weight: 600; color: var(--bg); min-width: fit-content; }
   .bar-fill.r1 { background: linear-gradient(90deg, var(--gold), #ffe066); }
@@ -73,14 +68,53 @@
   .bar-fill.r3 { background: linear-gradient(90deg, var(--bronze), #e6a860); }
   .bar-fill.rn { background: linear-gradient(90deg, var(--accent), #79c0ff); }
 
-  /* Activity feed */
-  .feed { display: flex; flex-direction: column; gap: 0.7rem; max-height: 420px; overflow-y: auto; }
+  .feed { display: flex; flex-direction: column; gap: 0.7rem; max-height: 320px; overflow-y: auto; }
   .feed-item { display: flex; gap: 0.7rem; align-items: flex-start; font-size: 0.85rem; }
   .feed-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
   .feed-text { line-height: 1.4; }
   .feed-time { color: var(--muted); font-size: 0.75rem; }
 
-  /* Footer */
+  /* Role badges */
+  .role-owner { color: var(--gold); font-size: 0.75rem; font-weight: 700; }
+  .role-admin { color: var(--accent); font-size: 0.75rem; font-weight: 700; }
+
+  /* Action buttons */
+  .btn { border: none; border-radius: 6px; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.8; }
+  .btn-approve { background: var(--green); color: var(--bg); }
+  .btn-reject { background: var(--red); color: #fff; }
+  .btn-kick { background: var(--red); color: #fff; opacity: 0.7; }
+  .btn-kick:hover { opacity: 1; }
+
+  /* Pending panel */
+  .pending-item {
+    padding: 0.5rem 0; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+  }
+  .pending-item:last-child { border-bottom: none; }
+  .pending-actions { display: flex; gap: 0.3rem; }
+
+  /* Member row */
+  .member-row {
+    padding: 0.4rem 0; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .member-row:last-child { border-bottom: none; }
+
+  /* Admin login bar */
+  .admin-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 0.8rem 1.2rem; margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 0.8rem; font-size: 0.88rem;
+  }
+  .admin-bar input {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 6px 10px; font-size: 0.85rem; width: 200px;
+  }
+  .admin-bar .btn { padding: 6px 14px; }
+  .admin-bar .status { color: var(--muted); font-size: 0.82rem; }
+  .admin-bar .status.active { color: var(--green); }
+
   .footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.78rem; }
 </style>
 </head>
@@ -95,14 +129,22 @@
 </div>
 
 <div class="container">
+  <!-- Admin login -->
+  <div class="admin-bar">
+    <span>Your ID:</span>
+    <input type="text" id="admin-id" placeholder="user_id 입력">
+    <button class="btn btn-approve" onclick="loginAdmin()">Login</button>
+    <span class="status" id="admin-status"></span>
+  </div>
+
   <!-- Stats -->
   <div class="stats-grid">
     <div class="stat-card">
-      <span class="label">Total Players</span>
+      <span class="label">Active Members</span>
       <span class="value" id="stat-players">-</span>
     </div>
     <div class="stat-card">
-      <span class="label">Total Tokens Burned</span>
+      <span class="label">Total Tokens</span>
       <span class="value" id="stat-total-tokens">-</span>
       <span class="sub" id="stat-total-sub"></span>
     </div>
@@ -116,10 +158,13 @@
       <span class="value" id="stat-milestone">-</span>
       <span class="sub" id="stat-milestone-sub"></span>
     </div>
+    <div class="stat-card" id="stat-pending-card" style="display:none;">
+      <span class="label">Pending Requests</span>
+      <span class="value" id="stat-pending" style="color:var(--orange)">0</span>
+    </div>
   </div>
 
   <div class="main-grid">
-    <!-- Left: Ranking + Chart -->
     <div>
       <!-- Bar Chart -->
       <div class="panel" style="margin-bottom:1.5rem;">
@@ -128,16 +173,22 @@
       </div>
 
       <!-- Ranking Table -->
-      <div class="panel">
+      <div class="panel" style="margin-bottom:1.5rem;">
         <div class="panel-title">Leaderboard</div>
         <table>
           <thead><tr><th style="width:3rem">#</th><th>User</th><th style="text-align:right">Tokens</th><th style="text-align:right">Last Report</th></tr></thead>
           <tbody id="rank-body"></tbody>
         </table>
       </div>
+
+      <!-- Pending Approvals (관리자만 보임) -->
+      <div class="panel" id="pending-panel" style="display:none;">
+        <div class="panel-title">Pending Join Requests <span class="badge" id="pending-badge">0</span></div>
+        <div id="pending-list"></div>
+      </div>
     </div>
 
-    <!-- Right: Activity feed + Members -->
+    <!-- Right sidebar -->
     <div>
       <div class="panel" style="margin-bottom:1.5rem;">
         <div class="panel-title">Activity Feed</div>
@@ -154,39 +205,39 @@
   </div>
 </div>
 
-<div class="footer">Token Flex Dashboard &mdash; Anthropic API Token Usage Competition</div>
+<div class="footer">Token Flex Dashboard — Anthropic API Token Usage Competition</div>
 
 <script>
-const POLL_INTERVAL = 15_000;
-const API_BASE = window.location.origin;
+const POLL = 15_000;
+const API = window.location.origin;
+let adminId = localStorage.getItem('tf_admin') || '';
+let adminRole = '';
 
 function formatTokens(n) {
-  if (n >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1) + 'B';
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
   return n.toString();
 }
-function formatTokensFull(n) { return n.toLocaleString(); }
-
+function formatFull(n) { return n.toLocaleString(); }
 function timeAgo(iso) {
-  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-  return Math.floor(diff / 86400) + 'd ago';
+  const d = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (d < 60) return 'just now';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
 }
 
 const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
+const roleBadge = { owner: '<span class="role-owner">OWNER</span>', admin: '<span class="role-admin">ADMIN</span>' };
 
-let prevBoard = [];
-let activityItems = [];
+let prevBoard = [], activityItems = [];
 
 function addActivity(icon, text) {
   activityItems.unshift({ icon, text, time: new Date().toISOString() });
   if (activityItems.length > 50) activityItems.length = 50;
   renderFeed();
 }
-
 function renderFeed() {
   const el = document.getElementById('activity-feed');
   if (!activityItems.length) return;
@@ -194,104 +245,163 @@ function renderFeed() {
     `<div class="feed-item"><span class="feed-icon">${a.icon}</span><div><div class="feed-text">${a.text}</div><div class="feed-time">${timeAgo(a.time)}</div></div></div>`
   ).join('');
 }
+function detectChanges(old, nu) {
+  const m = {}; old.forEach(e => m[e.user_id] = e);
+  for (const e of nu) {
+    const o = m[e.user_id];
+    if (!o) addActivity('🆕', `<b>${e.user_id}</b> joined the race!`);
+    else if (e.used_tokens > o.used_tokens) addActivity('📈', `<b>${e.user_id}</b> +${formatTokens(e.used_tokens - o.used_tokens)} tokens`);
+  }
+  if (nu.length && old.length && nu[0].user_id !== old[0]?.user_id)
+    addActivity('👑', `<b>${nu[0].user_id}</b> took the #1 spot!`);
+}
 
-function detectChanges(oldBoard, newBoard) {
-  const oldMap = {};
-  oldBoard.forEach(e => oldMap[e.user_id] = e);
-  for (const entry of newBoard) {
-    const old = oldMap[entry.user_id];
-    if (!old) {
-      addActivity('🆕', `<b>${entry.user_id}</b> joined the race!`);
-    } else if (entry.used_tokens > old.used_tokens) {
-      const delta = entry.used_tokens - old.used_tokens;
-      addActivity('📈', `<b>${entry.user_id}</b> +${formatTokens(delta)} tokens`);
-    }
-  }
-  // Rank changes
-  if (newBoard.length && oldBoard.length && newBoard[0].user_id !== oldBoard[0]?.user_id) {
-    addActivity('👑', `<b>${newBoard[0].user_id}</b> took the #1 spot!`);
-  }
+// Admin login
+function loginAdmin() {
+  adminId = document.getElementById('admin-id').value.trim();
+  if (adminId) { localStorage.setItem('tf_admin', adminId); fetchAndRender(); }
+}
+
+// Admin actions
+async function doAction(endpoint, body) {
+  try {
+    const r = await fetch(API + endpoint, {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {}),
+    });
+    const d = await r.json();
+    if (!r.ok) alert(d.detail || 'Error');
+    else fetchAndRender();
+  } catch(e) { alert('Request failed'); }
+}
+
+function approveUser(uid) { doAction(`/approve/${uid}?actor=${adminId}`); }
+function rejectUser(uid) {
+  const reason = prompt('거절 사유 (선택):', '');
+  doAction(`/reject/${uid}?actor=${adminId}&reason=${encodeURIComponent(reason || '')}`);
+}
+function kickUser(uid) {
+  if (!confirm(`${uid} 님을 추방하시겠습니까?`)) return;
+  const reason = prompt('추방 사유 (선택):', '');
+  doAction(`/kick/${uid}?actor=${adminId}&reason=${encodeURIComponent(reason || '')}`);
 }
 
 async function fetchAndRender() {
   try {
-    const [rankRes, statsRes, membersRes] = await Promise.all([
-      fetch(API_BASE + '/rank'),
-      fetch(API_BASE + '/stats'),
-      fetch(API_BASE + '/members'),
+    const [rankR, statsR, membersR, pendingR] = await Promise.all([
+      fetch(API + '/rank'), fetch(API + '/stats'), fetch(API + '/members'), fetch(API + '/pending'),
     ]);
-    const rankData = await rankRes.json();
-    const statsData = await statsRes.json();
-    const membersData = await membersRes.json();
-    const board = rankData.board || [];
-    const members = membersData.members || [];
+    const rank = await rankR.json(), stats = await statsR.json();
+    const members = (await membersR.json()).members || [];
+    const pending = (await pendingR.json()).pending || [];
+    const board = rank.board || [];
 
-    // Detect changes
+    // Detect admin role
+    const me = members.find(m => m.user_id === adminId);
+    adminRole = me ? me.role : '';
+    const isAdmin = adminRole === 'owner' || adminRole === 'admin';
+
+    const statusEl = document.getElementById('admin-status');
+    if (adminId && me) {
+      const rLabel = {owner:'그룹장', admin:'관리자', member:'멤버'}[adminRole] || adminRole;
+      statusEl.textContent = `${adminId} (${rLabel})`;
+      statusEl.className = 'status active';
+    } else if (adminId) {
+      statusEl.textContent = 'Not a member';
+      statusEl.className = 'status';
+    } else {
+      statusEl.textContent = '';
+    }
+
     if (prevBoard.length) detectChanges(prevBoard, board);
     prevBoard = JSON.parse(JSON.stringify(board));
 
     // Stats
-    document.getElementById('stat-players').textContent = statsData.total_users;
-    document.getElementById('stat-total-tokens').textContent = formatTokens(statsData.total_tokens);
-    document.getElementById('stat-total-sub').textContent = formatTokensFull(statsData.total_tokens) + ' tokens';
-
-    if (statsData.leader) {
-      document.getElementById('stat-leader').textContent = statsData.leader.user_id;
-      document.getElementById('stat-leader-sub').textContent = formatTokensFull(statsData.leader.used_tokens) + ' tokens';
+    document.getElementById('stat-players').textContent = stats.total_users;
+    document.getElementById('stat-total-tokens').textContent = formatTokens(stats.total_tokens);
+    document.getElementById('stat-total-sub').textContent = formatFull(stats.total_tokens) + ' tokens';
+    if (stats.leader) {
+      document.getElementById('stat-leader').textContent = stats.leader.user_id;
+      document.getElementById('stat-leader-sub').textContent = formatFull(stats.leader.used_tokens) + ' tokens';
     }
-    if (statsData.latest_milestone) {
-      document.getElementById('stat-milestone').textContent = statsData.latest_milestone.user_id;
-      document.getElementById('stat-milestone-sub').textContent = formatTokensFull(statsData.latest_milestone.milestone) + ' reached';
+    if (stats.latest_milestone) {
+      document.getElementById('stat-milestone').textContent = stats.latest_milestone.user_id;
+      document.getElementById('stat-milestone-sub').textContent = formatFull(stats.latest_milestone.milestone) + ' reached';
     }
 
-    // Table
-    const tbody = document.getElementById('rank-body');
-    tbody.innerHTML = board.map(e => {
+    // Pending stat card (admin only)
+    const pendCard = document.getElementById('stat-pending-card');
+    if (isAdmin && pending.length > 0) {
+      pendCard.style.display = '';
+      document.getElementById('stat-pending').textContent = pending.length;
+    } else {
+      pendCard.style.display = 'none';
+    }
+
+    // Leaderboard table
+    document.getElementById('rank-body').innerHTML = board.map(e => {
       const medal = medals[e.rank] || e.rank;
       return `<tr>
         <td class="rank-medal">${medal}</td>
         <td class="user-id">${e.user_id}</td>
-        <td class="tokens" style="text-align:right">${formatTokensFull(e.used_tokens)}</td>
+        <td class="tokens" style="text-align:right">${formatFull(e.used_tokens)}</td>
         <td class="time-ago" style="text-align:right">${timeAgo(e.last_reported_at)}</td>
       </tr>`;
     }).join('');
 
     // Bar chart
-    const maxTokens = board.length ? board[0].used_tokens : 1;
-    const chart = document.getElementById('bar-chart');
-    chart.innerHTML = board.slice(0, 10).map(e => {
-      const pct = Math.max((e.used_tokens / maxTokens) * 100, 3);
+    const mx = board.length ? board[0].used_tokens : 1;
+    document.getElementById('bar-chart').innerHTML = board.slice(0,10).map(e => {
+      const pct = Math.max((e.used_tokens / mx) * 100, 3);
       const cls = e.rank <= 3 ? `r${e.rank}` : 'rn';
-      return `<div class="bar-row">
-        <span class="bar-label">${e.user_id}</span>
-        <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%">${formatTokens(e.used_tokens)}</div></div>
-      </div>`;
+      return `<div class="bar-row"><span class="bar-label">${e.user_id}</span><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%">${formatTokens(e.used_tokens)}</div></div></div>`;
     }).join('');
 
-    // Members panel
+    // Members panel (with role badges + kick for admin)
     const mList = document.getElementById('members-list');
     if (members.length) {
-      mList.innerHTML = members.map((m, i) => {
+      mList.innerHTML = members.map(m => {
         const name = m.display_name || m.user_id;
-        const inv = m.invited_by ? `<span style="color:var(--muted);font-size:0.75rem"> inv. ${m.invited_by}</span>` : '';
-        return `<div style="padding:0.35rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-          <span><strong>${name}</strong> <span style="color:var(--muted)">${m.user_id}</span>${inv}</span>
-          <span class="time-ago">${timeAgo(m.joined_at)}</span>
+        const badge = roleBadge[m.role] || '';
+        const inv = m.invited_by ? `<span style="color:var(--muted);font-size:0.72rem"> inv. ${m.invited_by}</span>` : '';
+        const kickBtn = (isAdmin && m.role !== 'owner' && m.user_id !== adminId)
+          ? `<button class="btn btn-kick" onclick="kickUser('${m.user_id}')">Kick</button>` : '';
+        return `<div class="member-row">
+          <div><strong>${name}</strong> ${badge} <span style="color:var(--muted);font-size:0.82rem">${m.user_id}</span>${inv}</div>
+          <div style="display:flex;align-items:center;gap:0.5rem;"><span class="time-ago">${timeAgo(m.joined_at)}</span>${kickBtn}</div>
         </div>`;
       }).join('');
     } else {
       mList.innerHTML = '<span style="color:var(--muted)">No members yet</span>';
     }
 
-    // Update time
+    // Pending panel (admin only)
+    const pp = document.getElementById('pending-panel');
+    if (isAdmin && pending.length > 0) {
+      pp.style.display = '';
+      document.getElementById('pending-badge').textContent = pending.length;
+      document.getElementById('pending-list').innerHTML = pending.map(p => {
+        const name = p.display_name || p.user_id;
+        const inv = p.invited_by ? ` (추천: ${p.invited_by})` : '';
+        return `<div class="pending-item">
+          <div><strong>${name}</strong> <span style="color:var(--muted)">${p.user_id}</span>${inv}<br><span class="time-ago">신청: ${timeAgo(p.requested_at)}</span></div>
+          <div class="pending-actions">
+            <button class="btn btn-approve" onclick="approveUser('${p.user_id}')">Approve</button>
+            <button class="btn btn-reject" onclick="rejectUser('${p.user_id}')">Reject</button>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      pp.style.display = 'none';
+    }
+
     document.getElementById('last-update').textContent = 'Updated ' + new Date().toLocaleTimeString();
-  } catch (err) {
-    console.error('Fetch error:', err);
-  }
+  } catch (err) { console.error('Fetch error:', err); }
 }
 
+// Restore admin from localStorage
+if (adminId) document.getElementById('admin-id').value = adminId;
 fetchAndRender();
-setInterval(fetchAndRender, POLL_INTERVAL);
+setInterval(fetchAndRender, POLL);
 </script>
 </body>
 </html>
