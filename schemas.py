@@ -141,3 +141,24 @@ class InviteInfo(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     used_by: str = ""
     used: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+
+class RegisterRequest(BaseModel):
+    """웹 회원가입 요청."""
+
+    user_id: constr(min_length=1, max_length=64)
+    password: constr(min_length=8, max_length=128)
+    display_name: str = ""
+    invite_code: str = ""
+
+
+class LoginRequest(BaseModel):
+    """웹 로그인 요청."""
+
+    user_id: constr(min_length=1, max_length=64)
+    password: constr(min_length=1, max_length=128)

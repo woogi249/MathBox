@@ -16,8 +16,14 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 
+import base64
+import hashlib
+import hmac
+import json as _json
+
 import aiosqlite
-from fastapi import FastAPI, HTTPException
+import bcrypt
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 
 from schemas import (
@@ -26,10 +32,12 @@ from schemas import (
     AlertEvent,
     AlertType,
     JoinRequest,
+    LoginRequest,
     MemberRole,
     MemberStatus,
     RankBoard,
     RankEntry,
+    RegisterRequest,
     UsagePayload,
     UsageResponse,
 )
@@ -52,6 +60,13 @@ GROUP_OWNER_ID = os.getenv("TOKENFLEX_OWNER", "")  # 최초 그룹장 user_id
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 
+# Session / JWT settings
+SESSION_SECRET = os.getenv("TOKENFLEX_SECRET", "")
+if not SESSION_SECRET:
+    SESSION_SECRET = secrets.token_urlsafe(32)
+    logger.warning("TOKENFLEX_SECRET not set — using random key (sessions won't survive restart)")
+SESSION_EXPIRE_DAYS = 7
+
 # ---------------------------------------------------------------------------
 # Global state
 # ---------------------------------------------------------------------------
@@ -63,6 +78,64 @@ _bot: TelegramBot | None = None
 async def get_db() -> aiosqlite.Connection:
     assert _db is not None, "DB not initialised"
     return _db
+
+
+# ---------------------------------------------------------------------------
+# Session / Auth helpers
+# ---------------------------------------------------------------------------
+
+
+def _b64e(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def _b64d(s: str) -> bytes:
+    s += "=" * (-len(s) % 4)
+    return base64.urlsafe_b64decode(s)
+
+
+def create_session_token(user_id: str) -> str:
+    """HMAC-SHA256 signed session token (no external JWT library needed)."""
+    from datetime import timedelta
+    payload = _json.dumps({
+        "sub": user_id,
+        "exp": (datetime.utcnow() + timedelta(days=SESSION_EXPIRE_DAYS)).isoformat(),
+    }).encode()
+    payload_b64 = _b64e(payload)
+    sig = hmac.new(SESSION_SECRET.encode(), payload_b64.encode(), hashlib.sha256).hexdigest()
+    return f"{payload_b64}.{sig}"
+
+
+def decode_session_token(token: str) -> str | None:
+    try:
+        parts = token.split(".")
+        if len(parts) != 2:
+            return None
+        payload_b64, sig = parts
+        expected_sig = hmac.new(SESSION_SECRET.encode(), payload_b64.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected_sig):
+            return None
+        payload = _json.loads(_b64d(payload_b64))
+        if datetime.fromisoformat(payload["exp"]) < datetime.utcnow():
+            return None
+        return payload.get("sub")
+    except Exception:
+        return None
+
+
+def get_current_user(request: Request) -> str | None:
+    token = request.cookies.get("tf_session")
+    if not token:
+        return None
+    return decode_session_token(token)
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+
+
+def verify_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
 # ---------------------------------------------------------------------------
@@ -123,6 +196,14 @@ async def init_db(db: aiosqlite.Connection) -> None:
         """
     )
     await db.commit()
+
+    # password_hash 컬럼 마이그레이션
+    async with db.execute("PRAGMA table_info(members)") as cur:
+        cols = [row[1] for row in await cur.fetchall()]
+    if "password_hash" not in cols:
+        await db.execute("ALTER TABLE members ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''")
+        await db.commit()
+        logger.info("Added password_hash column to members table")
 
     # 그룹장 자동 등록 (최초 1회)
     if GROUP_OWNER_ID:
@@ -711,6 +792,137 @@ async def dashboard():
 
 
 # ---------------------------------------------------------------------------
+# Auth API
+# ---------------------------------------------------------------------------
+
+
+@app.post("/auth/register")
+async def auth_register(req: RegisterRequest, response: Response):
+    db = await get_db()
+    pw_hash = hash_password(req.password)
+
+    # 기존 멤버 확인
+    async with db.execute(
+        "SELECT status, password_hash FROM members WHERE user_id = ?", (req.user_id,)
+    ) as cur:
+        row = await cur.fetchone()
+
+    if row:
+        status, existing_hash = row[0], row[1]
+        if status == "active" and existing_hash:
+            raise HTTPException(status_code=400, detail="이미 등록된 계정입니다. 로그인해주세요.")
+        if status == "active" and not existing_hash:
+            # 레거시 멤버: 비밀번호 설정
+            await db.execute(
+                "UPDATE members SET password_hash = ? WHERE user_id = ?",
+                (pw_hash, req.user_id),
+            )
+            await db.commit()
+            token = create_session_token(req.user_id)
+            response.set_cookie("tf_session", token, httponly=True, samesite="lax", max_age=SESSION_EXPIRE_DAYS * 86400)
+            return {"status": "ok", "user_id": req.user_id, "message": "비밀번호가 설정되었습니다."}
+        if status == "pending":
+            raise HTTPException(status_code=400, detail="이미 참여 신청 중입니다. 관리자 승인을 기다려주세요.")
+        # left / kicked → 재가입 처리 (아래로)
+
+    # 초대코드 처리
+    invited_by = ""
+    target_status = "pending"
+    if req.invite_code:
+        inviter = await consume_invite(db, req.invite_code, req.user_id)
+        if not inviter:
+            raise HTTPException(status_code=400, detail="유효하지 않거나 이미 사용된 초대코드입니다.")
+        invited_by = inviter
+        target_status = "active"
+
+    now = datetime.utcnow().isoformat()
+    if row:
+        # left/kicked 재가입
+        await db.execute(
+            """
+            UPDATE members SET status = ?, role = 'member', display_name = ?,
+                invited_by = ?, joined_at = ?, left_at = NULL, password_hash = ?
+            WHERE user_id = ?
+            """,
+            (target_status, req.display_name, invited_by, now, pw_hash, req.user_id),
+        )
+    else:
+        await db.execute(
+            """
+            INSERT INTO members (user_id, display_name, invited_by, role, status, joined_at, password_hash)
+            VALUES (?, ?, ?, 'member', ?, ?, ?)
+            """,
+            (req.user_id, req.display_name, invited_by, target_status, now, pw_hash),
+        )
+    await db.commit()
+
+    if target_status == "active":
+        token = create_session_token(req.user_id)
+        response.set_cookie("tf_session", token, httponly=True, samesite="lax", max_age=SESSION_EXPIRE_DAYS * 86400)
+        if _bot:
+            asyncio.create_task(_bot.send_message(
+                f"🎊 *{req.display_name or req.user_id}* 님이 Token Flex에 참여했습니다!"
+            ))
+        return {"status": "ok", "user_id": req.user_id}
+    else:
+        if _bot:
+            asyncio.create_task(_bot.send_message(
+                f"📋 *{req.display_name or req.user_id}* 님이 참여를 신청했습니다.\n관리자: `/approve {req.user_id}` 또는 `/reject {req.user_id}`"
+            ))
+        return {"status": "pending", "user_id": req.user_id, "message": "참여 신청 완료! 관리자 승인을 기다려주세요."}
+
+
+@app.post("/auth/login")
+async def auth_login(req: LoginRequest, response: Response):
+    db = await get_db()
+    async with db.execute(
+        "SELECT status, password_hash FROM members WHERE user_id = ?", (req.user_id,)
+    ) as cur:
+        row = await cur.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=401, detail="등록되지 않은 계정입니다. 회원가입해주세요.")
+
+    status, pw_hash = row[0], row[1]
+
+    if not pw_hash:
+        raise HTTPException(status_code=401, detail="비밀번호가 설정되지 않은 계정입니다. 회원가입으로 비밀번호를 설정해주세요.")
+
+    if not verify_password(req.password, pw_hash):
+        raise HTTPException(status_code=401, detail="비밀번호가 올바르지 않습니다.")
+
+    if status == "pending":
+        raise HTTPException(status_code=403, detail="참여 신청이 아직 승인되지 않았습니다.")
+    if status in ("kicked", "left"):
+        raise HTTPException(status_code=403, detail="탈퇴하거나 추방된 계정입니다. 회원가입으로 재신청해주세요.")
+
+    token = create_session_token(req.user_id)
+    response.set_cookie("tf_session", token, httponly=True, samesite="lax", max_age=SESSION_EXPIRE_DAYS * 86400)
+    return {"status": "ok", "user_id": req.user_id}
+
+
+@app.post("/auth/logout")
+async def auth_logout(response: Response):
+    response.delete_cookie("tf_session")
+    return {"status": "ok"}
+
+
+@app.get("/auth/me")
+async def auth_me(request: Request):
+    user_id = get_current_user(request)
+    if not user_id:
+        return {"user_id": None}
+    db = await get_db()
+    async with db.execute(
+        "SELECT display_name, role, status FROM members WHERE user_id = ?", (user_id,)
+    ) as cur:
+        row = await cur.fetchone()
+    if not row or row[2] != "active":
+        return {"user_id": None}
+    return {"user_id": user_id, "display_name": row[0], "role": row[1]}
+
+
+# ---------------------------------------------------------------------------
 # Member management API
 # ---------------------------------------------------------------------------
 
@@ -725,19 +937,25 @@ async def api_join(req: JoinRequest):
 
 
 @app.post("/leave/{user_id}")
-async def api_leave(user_id: str):
+async def api_leave(user_id: str, request: Request, response: Response):
     db = await get_db()
+    session_user = get_current_user(request)
+    if session_user and session_user != user_id:
+        raise HTTPException(status_code=403, detail="본인만 탈퇴할 수 있습니다.")
     result = await _handle_leave(db, user_id)
     if not result["ok"]:
         raise HTTPException(status_code=400, detail=result["error"])
+    if session_user:
+        response.delete_cookie("tf_session")
     return result
 
 
 @app.post("/kick/{target}")
-async def api_kick(target: str, actor: str = "", reason: str = ""):
+async def api_kick(target: str, request: Request, actor: str = "", reason: str = ""):
     db = await get_db()
+    actor = get_current_user(request) or actor
     if not actor:
-        raise HTTPException(status_code=400, detail="actor parameter required")
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     result = await _handle_kick(db, actor, target, reason)
     if not result["ok"]:
         raise HTTPException(status_code=403, detail=result["error"])
@@ -745,10 +963,11 @@ async def api_kick(target: str, actor: str = "", reason: str = ""):
 
 
 @app.post("/approve/{target}")
-async def api_approve(target: str, actor: str = ""):
+async def api_approve(target: str, request: Request, actor: str = ""):
     db = await get_db()
+    actor = get_current_user(request) or actor
     if not actor:
-        raise HTTPException(status_code=400, detail="actor parameter required")
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     result = await _handle_approve(db, actor, target)
     if not result["ok"]:
         raise HTTPException(status_code=403, detail=result["error"])
@@ -756,10 +975,11 @@ async def api_approve(target: str, actor: str = ""):
 
 
 @app.post("/reject/{target}")
-async def api_reject(target: str, actor: str = "", reason: str = ""):
+async def api_reject(target: str, request: Request, actor: str = "", reason: str = ""):
     db = await get_db()
+    actor = get_current_user(request) or actor
     if not actor:
-        raise HTTPException(status_code=400, detail="actor parameter required")
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     result = await _handle_reject(db, actor, target, reason)
     if not result["ok"]:
         raise HTTPException(status_code=403, detail=result["error"])
@@ -767,10 +987,13 @@ async def api_reject(target: str, actor: str = "", reason: str = ""):
 
 
 @app.post("/set-role/{target}")
-async def api_set_role(target: str, actor: str = "", role: str = ""):
+async def api_set_role(target: str, request: Request, actor: str = "", role: str = ""):
     db = await get_db()
-    if not actor or not role:
-        raise HTTPException(status_code=400, detail="actor and role parameters required")
+    actor = get_current_user(request) or actor
+    if not actor:
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+    if not role:
+        raise HTTPException(status_code=400, detail="role parameter required")
     result = await _handle_set_role(db, actor, target, role)
     if not result["ok"]:
         raise HTTPException(status_code=403, detail=result["error"])
@@ -778,10 +1001,11 @@ async def api_set_role(target: str, actor: str = "", role: str = ""):
 
 
 @app.post("/transfer-owner/{target}")
-async def api_transfer(target: str, actor: str = ""):
+async def api_transfer(target: str, request: Request, actor: str = ""):
     db = await get_db()
+    actor = get_current_user(request) or actor
     if not actor:
-        raise HTTPException(status_code=400, detail="actor parameter required")
+        raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
     result = await _handle_transfer(db, actor, target)
     if not result["ok"]:
         raise HTTPException(status_code=403, detail=result["error"])

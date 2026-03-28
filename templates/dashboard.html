@@ -178,6 +178,21 @@
   .modal .field input:focus { outline: none; border-color: var(--accent); }
   .modal .actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.2rem; }
 
+  /* Auth tabs */
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 1rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+  .auth-tab {
+    flex: 1; padding: 8px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    color: var(--muted); background: var(--bg); transition: all 0.15s;
+  }
+  .auth-tab:hover { color: var(--text); }
+  .auth-tab.active { background: var(--surface); color: var(--accent); }
+  .auth-form { display: flex; flex-direction: column; gap: 0.6rem; }
+  .auth-form input {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 9px 12px; font-size: 0.88rem; width: 100%; max-width: 340px;
+  }
+  .auth-form input:focus { outline: none; border-color: var(--accent); }
+
   .footer { text-align: center; padding: 1.5rem; color: var(--muted); font-size: 0.75rem; }
 
   /* Mobile */
@@ -247,9 +262,10 @@
 <script>
 const POLL = 15_000;
 const API = location.origin;
-let myId = localStorage.getItem('tf_user') || '';
+let myId = '';
 let myRole = '';
 let myRank = null;
+let authTab = 'login';
 
 // ========== Formatters ==========
 const fmt = n => n >= 1e9 ? (n/1e9).toFixed(1)+'B' : n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : ''+n;
@@ -269,32 +285,46 @@ function toast(msg, type='success') {
   setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); }, 3000);
 }
 
-// ========== Modal ==========
-function showModal(html) { document.getElementById('modal-root').innerHTML = html; }
-function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
+// ========== Session check ==========
+async function checkSession() {
+  try {
+    const r = await fetch(API+'/auth/me', {credentials:'same-origin'});
+    const d = await r.json();
+    if (d.user_id) { myId = d.user_id; myRole = d.role || ''; return true; }
+  } catch {}
+  myId = ''; myRole = '';
+  return false;
+}
 
 // ========== Identity bar ==========
 function renderIdBar() {
   const bar = document.getElementById('id-bar');
   if (!myId) {
+    const isLogin = authTab === 'login';
     bar.innerHTML = `
-      <div class="id-bar-logged-out">
-        <label>참여하려면 ID를 입력하세요</label>
-        <input type="text" id="login-input" placeholder="user_id" onkeydown="if(event.key==='Enter')doLogin()">
-        <button class="btn btn-primary" onclick="doLogin()">입장</button>
+      <div class="auth-tabs">
+        <div class="auth-tab ${isLogin?'active':''}" onclick="authTab='login';renderIdBar()">로그인</div>
+        <div class="auth-tab ${!isLogin?'active':''}" onclick="authTab='register';renderIdBar()">회원가입</div>
       </div>
-      <div class="hint">기존 멤버는 ID 입력만으로 대시보드를 이용할 수 있고, 신규 유저는 참여 신청이 가능합니다.</div>`;
+      ${isLogin ? `
+        <div class="auth-form">
+          <input type="text" id="login-uid" placeholder="아이디" onkeydown="if(event.key==='Enter')document.getElementById('login-pw').focus()">
+          <input type="password" id="login-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="btn btn-primary" onclick="doLogin()" style="align-self:flex-start">로그인</button>
+        </div>
+      ` : `
+        <div class="auth-form">
+          <input type="text" id="reg-uid" placeholder="아이디">
+          <input type="password" id="reg-pw" placeholder="비밀번호 (8자 이상)">
+          <input type="text" id="reg-name" placeholder="표시 이름 (선택)">
+          <input type="text" id="reg-code" placeholder="초대 코드 (없으면 관리자 승인 필요)">
+          <button class="btn btn-primary" onclick="doRegister()" style="align-self:flex-start">회원가입</button>
+        </div>
+      `}`;
   } else {
     const rTag = roleTag[myRole] || 'role-tag-member';
-    const rLbl = roleLabel[myRole] || myRole || '비멤버';
+    const rLbl = roleLabel[myRole] || myRole || '멤버';
     const rankText = myRank ? `#${myRank}` : '-';
-    const actions = [];
-    if (!myRole) {
-      actions.push(`<button class="btn btn-primary" onclick="showJoinModal()">참여 신청</button>`);
-    } else {
-      actions.push(`<button class="btn btn-ghost btn-sm" onclick="doLeave()">탈퇴</button>`);
-    }
-    actions.push(`<button class="btn btn-ghost btn-sm" onclick="doLogout()">로그아웃</button>`);
     bar.innerHTML = `
       <div class="id-bar-logged-in">
         <div class="user-info">
@@ -302,80 +332,66 @@ function renderIdBar() {
           <span class="user-role ${rTag}">${rLbl}</span>
           <span class="my-rank-mini">순위 <b>${rankText}</b></span>
         </div>
-        <div style="display:flex;gap:0.4rem;align-items:center;">${actions.join('')}</div>
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          <button class="btn btn-ghost btn-sm" onclick="doLeave()">탈퇴</button>
+          <button class="btn btn-ghost btn-sm" onclick="doLogout()">로그아웃</button>
+        </div>
       </div>`;
   }
 }
 
-function doLogin() {
-  const input = document.getElementById('login-input');
-  if (!input) return;
-  const val = input.value.trim();
-  if (!val) return;
-  myId = val;
-  localStorage.setItem('tf_user', myId);
-  fetchAndRender();
+async function doLogin() {
+  const uid = document.getElementById('login-uid')?.value.trim();
+  const pw = document.getElementById('login-pw')?.value;
+  if (!uid || !pw) { toast('아이디와 비밀번호를 입력하세요','error'); return; }
+  try {
+    const r = await fetch(API+'/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
+      body: JSON.stringify({user_id: uid, password: pw}),
+    });
+    const d = await r.json();
+    if (r.ok) { toast('로그인 성공!','success'); myId = uid; await checkSession(); fetchAndRender(); }
+    else toast(d.detail || '로그인 실패','error');
+  } catch { toast('요청 실패','error'); }
 }
-function doLogout() {
+
+async function doRegister() {
+  const uid = document.getElementById('reg-uid')?.value.trim();
+  const pw = document.getElementById('reg-pw')?.value;
+  const name = document.getElementById('reg-name')?.value.trim() || '';
+  const code = document.getElementById('reg-code')?.value.trim() || '';
+  if (!uid || !pw) { toast('아이디와 비밀번호를 입력하세요','error'); return; }
+  if (pw.length < 8) { toast('비밀번호는 8자 이상이어야 합니다','error'); return; }
+  try {
+    const r = await fetch(API+'/auth/register', {
+      method:'POST', headers:{'Content-Type':'application/json'}, credentials:'same-origin',
+      body: JSON.stringify({user_id: uid, password: pw, display_name: name, invite_code: code}),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      if (d.status === 'pending') toast('참여 신청 완료! 관리자 승인 후 로그인할 수 있습니다.','success');
+      else { toast('가입 완료! 환영합니다!','success'); await checkSession(); }
+      fetchAndRender();
+    } else toast(d.detail || '가입 실패','error');
+  } catch { toast('요청 실패','error'); }
+}
+
+async function doLogout() {
+  try {
+    await fetch(API+'/auth/logout', {method:'POST', credentials:'same-origin'});
+  } catch {}
   myId = ''; myRole = ''; myRank = null;
-  localStorage.removeItem('tf_user');
   renderIdBar();
   fetchAndRender();
 }
 
-// ========== Join modal ==========
-function showJoinModal() {
-  showModal(`
-    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal">
-        <h2>Token Flex 참여</h2>
-        <div class="field">
-          <label>User ID</label>
-          <input type="text" id="join-uid" value="${myId}" readonly style="opacity:0.7">
-        </div>
-        <div class="field">
-          <label>표시 이름 (선택)</label>
-          <input type="text" id="join-name" placeholder="예: 홍길동">
-        </div>
-        <div class="field">
-          <label>초대 코드 (없으면 관리자 승인 필요)</label>
-          <input type="text" id="join-code" placeholder="초대코드 입력">
-        </div>
-        <div class="actions">
-          <button class="btn btn-ghost" onclick="closeModal()">취소</button>
-          <button class="btn btn-primary" onclick="submitJoin()">참여 신청</button>
-        </div>
-      </div>
-    </div>`);
-}
-async function submitJoin() {
-  const uid = document.getElementById('join-uid').value.trim();
-  const name = document.getElementById('join-name').value.trim();
-  const code = document.getElementById('join-code').value.trim();
-  try {
-    const r = await fetch(API+'/join', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({user_id:uid, display_name:name, invite_code:code}),
-    });
-    const d = await r.json();
-    closeModal();
-    if (r.ok) {
-      if (d.status === 'pending') toast('참여 신청 완료! 관리자 승인을 기다려주세요.','success');
-      else toast('참여 완료! 환영합니다!','success');
-      fetchAndRender();
-    } else {
-      toast(d.detail || '참여 실패','error');
-    }
-  } catch { toast('요청 실패','error'); }
-}
-
 // ========== Leave ==========
 async function doLeave() {
-  if (!confirm(`정말 탈퇴하시겠습니까?`)) return;
+  if (!confirm('정말 탈퇴하시겠습니까?')) return;
   try {
-    const r = await fetch(API+`/leave/${myId}`, {method:'POST'});
+    const r = await fetch(API+`/leave/${myId}`, {method:'POST', credentials:'same-origin'});
     const d = await r.json();
-    if (r.ok) { toast('탈퇴했습니다. 다시 돌아오세요!','success'); fetchAndRender(); }
+    if (r.ok) { myId=''; myRole=''; myRank=null; toast('탈퇴했습니다. 다시 돌아오세요!','success'); fetchAndRender(); }
     else toast(d.detail || '탈퇴 실패','error');
   } catch { toast('요청 실패','error'); }
 }
@@ -383,21 +399,21 @@ async function doLeave() {
 // ========== Admin actions ==========
 async function adminAction(endpoint) {
   try {
-    const r = await fetch(API + endpoint, {method:'POST'});
+    const r = await fetch(API + endpoint, {method:'POST', credentials:'same-origin'});
     const d = await r.json();
     if (r.ok) { toast('완료','success'); fetchAndRender(); }
     else toast(d.detail || '실패','error');
   } catch { toast('요청 실패','error'); }
 }
-function approveUser(uid) { adminAction(`/approve/${uid}?actor=${myId}`); }
+function approveUser(uid) { adminAction(`/approve/${uid}`); }
 function rejectUser(uid) {
   const reason = prompt('거절 사유 (선택):','');
-  adminAction(`/reject/${uid}?actor=${myId}&reason=${encodeURIComponent(reason||'')}`);
+  adminAction(`/reject/${uid}?reason=${encodeURIComponent(reason||'')}`);
 }
 function kickUser(uid) {
   if (!confirm(`${uid} 님을 추방하시겠습니까?`)) return;
   const reason = prompt('추방 사유 (선택):','');
-  adminAction(`/kick/${uid}?actor=${myId}&reason=${encodeURIComponent(reason||'')}`);
+  adminAction(`/kick/${uid}?reason=${encodeURIComponent(reason||'')}`);
 }
 
 // ========== Activity ==========
@@ -547,8 +563,12 @@ async function fetchAndRender() {
   } catch (err) { console.error('Fetch error:', err); }
 }
 
-fetchAndRender();
-setInterval(fetchAndRender, POLL);
+// Initial load: check session then render
+(async () => {
+  await checkSession();
+  fetchAndRender();
+  setInterval(fetchAndRender, POLL);
+})();
 </script>
 </body>
 </html>
