@@ -1,7 +1,14 @@
 """Token Flex Dashboard — Shared Pydantic schemas (communication protocol)."""
 
 from datetime import datetime
+from enum import Enum
+
 from pydantic import BaseModel, Field, constr
+
+
+# ---------------------------------------------------------------------------
+# Client → Server
+# ---------------------------------------------------------------------------
 
 
 class UsagePayload(BaseModel):
@@ -19,12 +26,22 @@ class UsagePayload(BaseModel):
     )
 
 
+# ---------------------------------------------------------------------------
+# Server → Client
+# ---------------------------------------------------------------------------
+
+
 class UsageResponse(BaseModel):
     """Server → Client: 수신 확인 응답."""
 
     status: str = "ok"
     rank: int | None = Field(None, description="현재 유저 랭킹 (1-based)")
     total_users: int = 0
+
+
+# ---------------------------------------------------------------------------
+# Ranking
+# ---------------------------------------------------------------------------
 
 
 class RankEntry(BaseModel):
@@ -41,3 +58,37 @@ class RankBoard(BaseModel):
 
     board: list[RankEntry]
     generated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Milestone / Alert
+# ---------------------------------------------------------------------------
+
+# 토큰 마일스톤 기준점 (누적 토큰)
+MILESTONES = [
+    100_000,
+    500_000,
+    1_000_000,
+    5_000_000,
+    10_000_000,
+    50_000_000,
+    100_000_000,
+]
+
+DAILY_LIMIT = 10_000_000  # 일일 최대 한도 기본값
+
+
+class AlertType(str, Enum):
+    MILESTONE = "milestone"
+    DAILY_LIMIT = "daily_limit"
+    RANK_CHANGE = "rank_change"
+
+
+class AlertEvent(BaseModel):
+    """서버 내부에서 발생하는 알림 이벤트."""
+
+    alert_type: AlertType
+    user_id: str
+    message: str
+    used_tokens: int
+    triggered_at: datetime = Field(default_factory=datetime.utcnow)
