@@ -137,11 +137,18 @@
       </div>
     </div>
 
-    <!-- Right: Activity feed -->
-    <div class="panel">
-      <div class="panel-title">Activity Feed</div>
-      <div class="feed" id="activity-feed">
-        <div class="feed-item"><span class="feed-icon">⏳</span><span class="feed-text" style="color:var(--muted)">Waiting for data...</span></div>
+    <!-- Right: Activity feed + Members -->
+    <div>
+      <div class="panel" style="margin-bottom:1.5rem;">
+        <div class="panel-title">Activity Feed</div>
+        <div class="feed" id="activity-feed">
+          <div class="feed-item"><span class="feed-icon">⏳</span><span class="feed-text" style="color:var(--muted)">Waiting for data...</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Members</div>
+        <div id="members-list" style="font-size:0.88rem;"></div>
       </div>
     </div>
   </div>
@@ -208,13 +215,16 @@ function detectChanges(oldBoard, newBoard) {
 
 async function fetchAndRender() {
   try {
-    const [rankRes, statsRes] = await Promise.all([
+    const [rankRes, statsRes, membersRes] = await Promise.all([
       fetch(API_BASE + '/rank'),
       fetch(API_BASE + '/stats'),
+      fetch(API_BASE + '/members'),
     ]);
     const rankData = await rankRes.json();
     const statsData = await statsRes.json();
+    const membersData = await membersRes.json();
     const board = rankData.board || [];
+    const members = membersData.members || [];
 
     // Detect changes
     if (prevBoard.length) detectChanges(prevBoard, board);
@@ -257,6 +267,21 @@ async function fetchAndRender() {
         <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%">${formatTokens(e.used_tokens)}</div></div>
       </div>`;
     }).join('');
+
+    // Members panel
+    const mList = document.getElementById('members-list');
+    if (members.length) {
+      mList.innerHTML = members.map((m, i) => {
+        const name = m.display_name || m.user_id;
+        const inv = m.invited_by ? `<span style="color:var(--muted);font-size:0.75rem"> inv. ${m.invited_by}</span>` : '';
+        return `<div style="padding:0.35rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span><strong>${name}</strong> <span style="color:var(--muted)">${m.user_id}</span>${inv}</span>
+          <span class="time-ago">${timeAgo(m.joined_at)}</span>
+        </div>`;
+      }).join('');
+    } else {
+      mList.innerHTML = '<span style="color:var(--muted)">No members yet</span>';
+    }
 
     // Update time
     document.getElementById('last-update').textContent = 'Updated ' + new Date().toLocaleTimeString();

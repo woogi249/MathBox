@@ -5,13 +5,17 @@
 알림 브로드캐스트와 명령 응답을 담당한다.
 
 Commands:
-  /rank       — 전체 랭킹 보드
-  /me <id>    — 개인 상세 통계
-  /today      — 오늘의 사용량 리더보드
-  /stats      — 글로벌 집계 요약
-  /milestone  — 최근 마일스톤 기록
-  /daily <id> — 최근 7일 사용량 추이
-  /help       — 명령어 목록
+  /rank        — 전체 랭킹 보드
+  /me <id>     — 개인 상세 통계
+  /today       — 오늘의 사용량 리더보드
+  /stats       — 글로벌 집계 요약
+  /milestone   — 최근 마일스톤 기록
+  /daily <id>  — 최근 7일 사용량 추이
+  /join <id> [code]  — 그룹 참여 (초대코드 필요)
+  /leave <id>  — 그룹 탈퇴
+  /invite      — 초대코드 생성 (멤버만)
+  /members     — 현재 활성 멤버 목록
+  /help        — 명령어 목록
 """
 
 from __future__ import annotations
@@ -47,6 +51,10 @@ class TelegramBot:
         self._stats_cb: Callable[[], Awaitable[dict]] | None = None
         self._user_cb: Callable[[str], Awaitable[dict | None]] | None = None
         self._daily_cb: Callable[[str], Awaitable[list[dict]]] | None = None
+        self._join_cb: Callable[..., Awaitable[dict]] | None = None
+        self._leave_cb: Callable[[str], Awaitable[dict]] | None = None
+        self._invite_cb: Callable[[str], Awaitable[dict]] | None = None
+        self._members_cb: Callable[[], Awaitable[list[dict]]] | None = None
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -67,17 +75,14 @@ class TelegramBot:
     # Callback setters
     # ------------------------------------------------------------------
 
-    def set_rank_callback(self, cb):
-        self._rank_cb = cb
-
-    def set_stats_callback(self, cb):
-        self._stats_cb = cb
-
-    def set_user_callback(self, cb):
-        self._user_cb = cb
-
-    def set_daily_callback(self, cb):
-        self._daily_cb = cb
+    def set_rank_callback(self, cb): self._rank_cb = cb
+    def set_stats_callback(self, cb): self._stats_cb = cb
+    def set_user_callback(self, cb): self._user_cb = cb
+    def set_daily_callback(self, cb): self._daily_cb = cb
+    def set_join_callback(self, cb): self._join_cb = cb
+    def set_leave_callback(self, cb): self._leave_cb = cb
+    def set_invite_callback(self, cb): self._invite_cb = cb
+    def set_members_callback(self, cb): self._members_cb = cb
 
     # ------------------------------------------------------------------
     # Message sending
@@ -172,9 +177,9 @@ class TelegramBot:
         if not text.startswith("/"):
             return
 
-        parts = text.split(maxsplit=1)
-        cmd = parts[0].lower().split("@")[0]  # /rank@botname → /rank
-        arg = parts[1].strip() if len(parts) > 1 else ""
+        parts = text.split()
+        cmd = parts[0].lower().split("@")[0]
+        args = parts[1:]
 
         dispatch = {
             "/rank": self._cmd_rank,
@@ -183,19 +188,23 @@ class TelegramBot:
             "/stats": self._cmd_stats,
             "/milestone": self._cmd_milestone,
             "/daily": self._cmd_daily,
+            "/join": self._cmd_join,
+            "/leave": self._cmd_leave,
+            "/invite": self._cmd_invite,
+            "/members": self._cmd_members,
             "/help": self._cmd_help,
             "/start": self._cmd_help,
         }
 
         handler = dispatch.get(cmd)
         if handler:
-            await handler(chat_id, arg)
+            await handler(chat_id, args, msg)
 
     # ------------------------------------------------------------------
-    # /rank — 전체 랭킹
+    # /rank
     # ------------------------------------------------------------------
 
-    async def _cmd_rank(self, chat_id: str, _arg: str) -> None:
+    async def _cmd_rank(self, chat_id: str, args: list[str], msg: dict) -> None:
         if not self._rank_cb:
             await self.send_message("데이터를 불러올 수 없습니다.", chat_id)
             return
@@ -203,26 +212,28 @@ class TelegramBot:
         await self.send_message(self.format_rank_board(board), chat_id)
 
     # ------------------------------------------------------------------
-    # /me <user_id> — 개인 상세 통계
+    # /me <user_id>
     # ------------------------------------------------------------------
 
-    async def _cmd_me(self, chat_id: str, arg: str) -> None:
-        if not arg:
+    async def _cmd_me(self, chat_id: str, args: list[str], msg: dict) -> None:
+        if not args:
             await self.send_message("사용법: `/me <user_id>`", chat_id)
             return
         if not self._user_cb:
             await self.send_message("데이터를 불러올 수 없습니다.", chat_id)
             return
 
-        data = await self._user_cb(arg)
+        data = await self._user_cb(args[0])
         if not data:
-            await self.send_message(f"`{arg}` 유저를 찾을 수 없습니다.", chat_id)
+            await self.send_message(f"`{args[0]}` 유저를 찾을 수 없습니다.", chat_id)
             return
 
         ms_text = ""
         if data["milestones"]:
             ms_list = [f"`{m['milestone']:,}`" for m in data["milestones"]]
             ms_text = f"\n🏅 달성 마일스톤: {', '.join(ms_list)}"
+
+        invite_text = f"\n🎟️ 초대자: *{data['invited_by']}*" if data.get("invited_by") else ""
 
         text = (
             f"👤 *{data['user_id']}*\n"
@@ -232,14 +243,15 @@ class TelegramBot:
             f"📅 오늘: `{data['today_tokens']:,}` tokens\n"
             f"🕐 마지막 보고: _{data['last_reported']}_"
             f"{ms_text}"
+            f"{invite_text}"
         )
         await self.send_message(text, chat_id)
 
     # ------------------------------------------------------------------
-    # /today — 오늘의 리더보드
+    # /today
     # ------------------------------------------------------------------
 
-    async def _cmd_today(self, chat_id: str, _arg: str) -> None:
+    async def _cmd_today(self, chat_id: str, args: list[str], msg: dict) -> None:
         if not self._stats_cb:
             await self.send_message("데이터를 불러올 수 없습니다.", chat_id)
             return
@@ -260,10 +272,10 @@ class TelegramBot:
         await self.send_message(text, chat_id)
 
     # ------------------------------------------------------------------
-    # /stats — 글로벌 집계
+    # /stats
     # ------------------------------------------------------------------
 
-    async def _cmd_stats(self, chat_id: str, _arg: str) -> None:
+    async def _cmd_stats(self, chat_id: str, args: list[str], msg: dict) -> None:
         if not self._stats_cb:
             await self.send_message("데이터를 불러올 수 없습니다.", chat_id)
             return
@@ -281,7 +293,7 @@ class TelegramBot:
         text = (
             f"📈 *Global Stats*\n"
             f"\n"
-            f"👥 참여자: *{s['total_users']}*명\n"
+            f"👥 활성 멤버: *{s['total_users']}*명\n"
             f"🔥 전체 토큰: `{s['total_tokens']:,}`\n"
             f"{leader_line}"
             f"{ms_line}"
@@ -290,51 +302,47 @@ class TelegramBot:
         await self.send_message(text, chat_id)
 
     # ------------------------------------------------------------------
-    # /milestone — 마일스톤 기록
+    # /milestone
     # ------------------------------------------------------------------
 
-    async def _cmd_milestone(self, chat_id: str, _arg: str) -> None:
-        if not self._rank_cb:
+    async def _cmd_milestone(self, chat_id: str, args: list[str], msg: dict) -> None:
+        if not self._stats_cb:
             await self.send_message("데이터를 불러올 수 없습니다.", chat_id)
             return
 
-        # stats callback 통해 latest만 가져오기
-        if self._stats_cb:
-            s = await self._stats_cb()
-            ms = s.get("latest_milestone")
-            if not ms:
-                await self.send_message("아직 달성된 마일스톤이 없습니다.", chat_id)
-                return
-            text = (
-                f"🏅 *Latest Milestone*\n"
-                f"\n"
-                f"👤 *{ms['user_id']}*\n"
-                f"🎯 `{ms['milestone']:,}` tokens\n"
-                f"🕐 _{ms['reached_at']}_"
-            )
-            await self.send_message(text, chat_id)
-        else:
-            await self.send_message("데이터를 불러올 수 없습니다.", chat_id)
+        s = await self._stats_cb()
+        ms = s.get("latest_milestone")
+        if not ms:
+            await self.send_message("아직 달성된 마일스톤이 없습니다.", chat_id)
+            return
+        text = (
+            f"🏅 *Latest Milestone*\n"
+            f"\n"
+            f"👤 *{ms['user_id']}*\n"
+            f"🎯 `{ms['milestone']:,}` tokens\n"
+            f"🕐 _{ms['reached_at']}_"
+        )
+        await self.send_message(text, chat_id)
 
     # ------------------------------------------------------------------
-    # /daily <user_id> — 최근 7일 추이
+    # /daily <user_id>
     # ------------------------------------------------------------------
 
-    async def _cmd_daily(self, chat_id: str, arg: str) -> None:
-        if not arg:
+    async def _cmd_daily(self, chat_id: str, args: list[str], msg: dict) -> None:
+        if not args:
             await self.send_message("사용법: `/daily <user_id>`", chat_id)
             return
         if not self._daily_cb:
             await self.send_message("데이터를 불러올 수 없습니다.", chat_id)
             return
 
-        history = await self._daily_cb(arg)
+        history = await self._daily_cb(args[0])
         if not history:
-            await self.send_message(f"`{arg}` 의 일별 기록이 없습니다.", chat_id)
+            await self.send_message(f"`{args[0]}` 의 일별 기록이 없습니다.", chat_id)
             return
 
         max_tok = max(d["tokens"] for d in history) if history else 1
-        lines = [f"📊 *{arg}* — 최근 {len(history)}일 추이", ""]
+        lines = [f"📊 *{args[0]}* — 최근 {len(history)}일 추이", ""]
         for d in history:
             bar = self._bar(d["tokens"], max_tok, 10)
             lines.append(f"`{d['date'][5:]}` {bar} `{self._fmt_tokens(d['tokens'])}`")
@@ -342,19 +350,134 @@ class TelegramBot:
         await self.send_message("\n".join(lines), chat_id)
 
     # ------------------------------------------------------------------
+    # /join <user_id> [invite_code]
+    # ------------------------------------------------------------------
+
+    async def _cmd_join(self, chat_id: str, args: list[str], msg: dict) -> None:
+        if not args:
+            await self.send_message(
+                "사용법: `/join <user_id> [초대코드]`\n"
+                "예: `/join alice abc123`",
+                chat_id,
+            )
+            return
+        if not self._join_cb:
+            await self.send_message("가입 기능을 사용할 수 없습니다.", chat_id)
+            return
+
+        user_id = args[0]
+        invite_code = args[1] if len(args) > 1 else ""
+
+        # 텔레그램 유저 정보로 display_name 추출
+        from_user = msg.get("from", {})
+        display_name = (
+            from_user.get("first_name", "")
+            + (" " + from_user.get("last_name", "")).rstrip()
+        ).strip() or user_id
+
+        result = await self._join_cb(user_id, display_name, chat_id, invite_code)
+
+        if result.get("ok"):
+            invited_line = f"\n🎟️ 초대자: *{result['invited_by']}*" if result.get("invited_by") else ""
+            await self.send_message(
+                f"✅ *{display_name}* (`{user_id}`) 참여 완료!{invited_line}\n\n"
+                f"이제 클라이언트 데몬에서 `TOKENFLEX_USER_ID={user_id}`로 설정하고 실행하세요.",
+                chat_id,
+            )
+        else:
+            await self.send_message(f"❌ {result.get('error', '가입 실패')}", chat_id)
+
+    # ------------------------------------------------------------------
+    # /leave <user_id>
+    # ------------------------------------------------------------------
+
+    async def _cmd_leave(self, chat_id: str, args: list[str], msg: dict) -> None:
+        if not args:
+            await self.send_message("사용법: `/leave <user_id>`", chat_id)
+            return
+        if not self._leave_cb:
+            await self.send_message("탈퇴 기능을 사용할 수 없습니다.", chat_id)
+            return
+
+        result = await self._leave_cb(args[0])
+        if result.get("ok"):
+            await self.send_message(f"👋 `{args[0]}` 님이 탈퇴했습니다. 다시 돌아오세요!", chat_id)
+        else:
+            await self.send_message(f"❌ {result.get('error', '탈퇴 실패')}", chat_id)
+
+    # ------------------------------------------------------------------
+    # /invite — 초대코드 생성
+    # ------------------------------------------------------------------
+
+    async def _cmd_invite(self, chat_id: str, args: list[str], msg: dict) -> None:
+        # 인자로 user_id를 받거나, 없으면 안내
+        if not args:
+            await self.send_message(
+                "사용법: `/invite <your_user_id>`\n"
+                "본인의 user\\_id를 입력하면 초대코드가 생성됩니다.",
+                chat_id,
+            )
+            return
+        if not self._invite_cb:
+            await self.send_message("초대 기능을 사용할 수 없습니다.", chat_id)
+            return
+
+        result = await self._invite_cb(args[0])
+        if result.get("ok"):
+            await self.send_message(
+                f"🎟️ *초대코드 생성 완료!*\n\n"
+                f"코드: `{result['code']}`\n\n"
+                f"친구에게 이 코드를 전달하세요.\n"
+                f"친구: `/join <user_id> {result['code']}`",
+                chat_id,
+            )
+        else:
+            await self.send_message(f"❌ {result.get('error', '초대코드 생성 실패')}", chat_id)
+
+    # ------------------------------------------------------------------
+    # /members — 활성 멤버 목록
+    # ------------------------------------------------------------------
+
+    async def _cmd_members(self, chat_id: str, args: list[str], msg: dict) -> None:
+        if not self._members_cb:
+            await self.send_message("데이터를 불러올 수 없습니다.", chat_id)
+            return
+
+        members = await self._members_cb()
+        if not members:
+            await self.send_message("등록된 멤버가 없습니다.", chat_id)
+            return
+
+        lines = [f"👥 *활성 멤버* ({len(members)}명)", ""]
+        for i, m in enumerate(members, 1):
+            name = m["display_name"] or m["user_id"]
+            invite_tag = f" ← {m['invited_by']}" if m["invited_by"] else ""
+            lines.append(f"`{i:>2}.` *{name}* (`{m['user_id']}`){invite_tag}")
+
+        await self.send_message("\n".join(lines), chat_id)
+
+    # ------------------------------------------------------------------
     # /help
     # ------------------------------------------------------------------
 
-    async def _cmd_help(self, chat_id: str, _arg: str) -> None:
+    async def _cmd_help(self, chat_id: str, args: list[str], msg: dict) -> None:
         text = (
             "🤖 *Token Flex Bot*\n"
             "\n"
+            "*📊 조회*\n"
             "`/rank` — 전체 랭킹 보드\n"
             "`/me <id>` — 개인 상세 통계\n"
             "`/today` — 오늘의 리더보드\n"
             "`/stats` — 글로벌 집계 요약\n"
             "`/milestone` — 최근 마일스톤 기록\n"
             "`/daily <id>` — 최근 7일 사용량 추이\n"
+            "\n"
+            "*👥 멤버 관리*\n"
+            "`/join <id> [코드]` — 그룹 참여\n"
+            "`/leave <id>` — 그룹 탈퇴\n"
+            "`/invite <id>` — 초대코드 생성\n"
+            "`/members` — 활성 멤버 목록\n"
+            "\n"
             "`/help` — 이 도움말"
         )
         await self.send_message(text, chat_id)

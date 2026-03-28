@@ -92,3 +92,44 @@ class AlertEvent(BaseModel):
     message: str
     used_tokens: int
     triggered_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# ---------------------------------------------------------------------------
+# Member management
+# ---------------------------------------------------------------------------
+
+
+class MemberStatus(str, Enum):
+    ACTIVE = "active"
+    LEFT = "left"
+
+
+class MemberInfo(BaseModel):
+    """그룹 멤버 정보."""
+
+    user_id: str
+    display_name: str = ""
+    telegram_chat_id: str = ""
+    invited_by: str = ""
+    status: MemberStatus = MemberStatus.ACTIVE
+    joined_at: datetime = Field(default_factory=datetime.utcnow)
+    left_at: datetime | None = None
+
+
+class JoinRequest(BaseModel):
+    """그룹 참여 요청."""
+
+    user_id: constr(min_length=1, max_length=64)
+    display_name: str = ""
+    telegram_chat_id: str = ""
+    invite_code: str = ""
+
+
+class InviteInfo(BaseModel):
+    """초대 코드 정보."""
+
+    code: str
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    used_by: str = ""
+    used: bool = False
