@@ -12,116 +12,190 @@
     --green: #3fb950; --red: #f85149; --orange: #d29922;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; line-height: 1.5; }
 
+  /* Header */
   .header {
     background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 1.2rem 2rem; display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
   }
-  .header h1 { font-size: 1.4rem; font-weight: 700; }
-  .header h1 span { color: var(--accent); }
+  .header h1 { font-size: 1.3rem; font-weight: 700; }
+  .header h1 em { color: var(--accent); font-style: normal; }
   .live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%;
-    display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .header-right { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; color: var(--muted); }
+    display: inline-block; margin-right: 5px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .header-right { display: flex; align-items: center; gap: 1rem; font-size: 0.82rem; color: var(--muted); }
 
-  .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+  /* Container */
+  .container { max-width: 1200px; margin: 0 auto; padding: 1.2rem; }
 
+  /* Identity bar */
+  .id-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1rem 1.2rem; margin-bottom: 1.2rem;
+  }
+  .id-bar-logged-out { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+  .id-bar-logged-in { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.8rem; }
+  .id-bar label { font-size: 0.85rem; color: var(--muted); }
+  .id-bar input {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 7px 12px; font-size: 0.88rem; width: 180px;
+  }
+  .id-bar input:focus { outline: none; border-color: var(--accent); }
+  .id-bar .hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.4rem; }
+  .id-bar .user-info { display: flex; align-items: center; gap: 0.6rem; }
+  .id-bar .user-name { font-weight: 700; font-size: 1rem; }
+  .id-bar .user-role { font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+  .role-tag-owner { background: var(--gold); color: var(--bg); }
+  .role-tag-admin { background: var(--accent); color: var(--bg); }
+  .role-tag-member { background: var(--border); color: var(--text); }
+  .my-rank-mini { font-size: 0.88rem; color: var(--muted); }
+  .my-rank-mini b { color: var(--accent); }
+
+  /* Buttons */
+  .btn {
+    border: none; border-radius: 8px; padding: 7px 14px; font-size: 0.82rem;
+    font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-success { background: var(--green); color: var(--bg); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+  .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.8rem; margin-bottom: 1.2rem; }
   .stat-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem;
+    padding: 1rem 1.1rem;
   }
-  .stat-card .label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat-card .value { font-size: 1.8rem; font-weight: 700; }
-  .stat-card .sub { font-size: 0.8rem; color: var(--muted); }
+  .stat-card .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.2rem; }
+  .stat-card .value { font-size: 1.6rem; font-weight: 700; }
+  .stat-card .sub { font-size: 0.78rem; color: var(--muted); }
 
-  .main-grid { display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; }
-  @media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
+  /* My rank card (special) */
+  .my-card {
+    background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(88,166,255,0.02));
+    border: 1px solid rgba(88,166,255,0.3);
+  }
+  .my-card .value { color: var(--accent); }
 
+  /* Main grid */
+  .main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 1.2rem; }
+  @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+  /* Panels */
   .panel {
     background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 1.2rem; overflow: hidden;
+    padding: 1.1rem; margin-bottom: 1.2rem;
   }
-  .panel-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-  .panel-title .badge { font-size: 0.7rem; background: var(--orange); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+  .panel:last-child { margin-bottom: 0; }
+  .panel-title {
+    font-size: 0.95rem; font-weight: 600; margin-bottom: 0.8rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .badge { font-size: 0.68rem; background: var(--orange); color: var(--bg); padding: 2px 8px; border-radius: 10px; font-weight: 700; }
 
+  /* Table */
   table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; padding: 0.5rem 0.8rem; border-bottom: 1px solid var(--border); }
-  td { padding: 0.7rem 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  th { text-align: left; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border); }
+  td { padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: rgba(88,166,255,0.04); }
-
-  .rank-medal { font-size: 1.2rem; width: 2rem; text-align: center; }
-  .user-id { font-weight: 600; }
+  tr.my-row td { background: rgba(88,166,255,0.08); }
+  .rank-medal { font-size: 1.1rem; width: 2rem; text-align: center; }
   .tokens { font-family: 'SF Mono', 'Consolas', monospace; color: var(--accent); font-weight: 600; }
-  .time-ago { color: var(--muted); font-size: 0.8rem; }
+  .time-ago { color: var(--muted); font-size: 0.78rem; }
 
-  .bar-chart { display: flex; flex-direction: column; gap: 0.6rem; }
-  .bar-row { display: flex; align-items: center; gap: 0.6rem; }
-  .bar-label { width: 80px; font-size: 0.82rem; font-weight: 600; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar-track { flex: 1; height: 24px; background: var(--bg); border-radius: 6px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
-    font-size: 0.72rem; font-weight: 600; color: var(--bg); min-width: fit-content; }
+  /* Bar chart */
+  .bar-chart { display: flex; flex-direction: column; gap: 0.5rem; }
+  .bar-row { display: flex; align-items: center; gap: 0.5rem; }
+  .bar-row.my-bar .bar-label { color: var(--accent); }
+  .bar-label { width: 72px; font-size: 0.8rem; font-weight: 600; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 22px; background: var(--bg); border-radius: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; transition: width 0.6s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 7px;
+    font-size: 0.7rem; font-weight: 600; color: var(--bg); min-width: fit-content; }
   .bar-fill.r1 { background: linear-gradient(90deg, var(--gold), #ffe066); }
   .bar-fill.r2 { background: linear-gradient(90deg, var(--silver), #e0e0e0); }
   .bar-fill.r3 { background: linear-gradient(90deg, var(--bronze), #e6a860); }
   .bar-fill.rn { background: linear-gradient(90deg, var(--accent), #79c0ff); }
 
-  .feed { display: flex; flex-direction: column; gap: 0.7rem; max-height: 320px; overflow-y: auto; }
-  .feed-item { display: flex; gap: 0.7rem; align-items: flex-start; font-size: 0.85rem; }
-  .feed-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
-  .feed-text { line-height: 1.4; }
-  .feed-time { color: var(--muted); font-size: 0.75rem; }
-
-  /* Role badges */
-  .role-owner { color: var(--gold); font-size: 0.75rem; font-weight: 700; }
-  .role-admin { color: var(--accent); font-size: 0.75rem; font-weight: 700; }
-
-  /* Action buttons */
-  .btn { border: none; border-radius: 6px; padding: 4px 10px; font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-  .btn:hover { opacity: 0.8; }
-  .btn-approve { background: var(--green); color: var(--bg); }
-  .btn-reject { background: var(--red); color: #fff; }
-  .btn-kick { background: var(--red); color: #fff; opacity: 0.7; }
-  .btn-kick:hover { opacity: 1; }
-
-  /* Pending panel */
-  .pending-item {
-    padding: 0.5rem 0; border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
-  }
-  .pending-item:last-child { border-bottom: none; }
-  .pending-actions { display: flex; gap: 0.3rem; }
+  /* Feed */
+  .feed { display: flex; flex-direction: column; gap: 0.6rem; max-height: 280px; overflow-y: auto; }
+  .feed-item { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 0.82rem; }
+  .feed-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+  .feed-time { color: var(--muted); font-size: 0.72rem; }
 
   /* Member row */
   .member-row {
     padding: 0.4rem 0; border-bottom: 1px solid var(--border);
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; font-size: 0.85rem;
   }
   .member-row:last-child { border-bottom: none; }
+  .member-row.my-member { background: rgba(88,166,255,0.06); margin: 0 -0.5rem; padding: 0.4rem 0.5rem; border-radius: 6px; }
+  .role-owner { color: var(--gold); font-size: 0.72rem; font-weight: 700; }
+  .role-admin { color: var(--accent); font-size: 0.72rem; font-weight: 700; }
 
-  /* Admin login bar */
-  .admin-bar {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-    padding: 0.8rem 1.2rem; margin-bottom: 1.5rem;
-    display: flex; align-items: center; gap: 0.8rem; font-size: 0.88rem;
-  }
-  .admin-bar input {
-    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
-    color: var(--text); padding: 6px 10px; font-size: 0.85rem; width: 200px;
-  }
-  .admin-bar .btn { padding: 6px 14px; }
-  .admin-bar .status { color: var(--muted); font-size: 0.82rem; }
-  .admin-bar .status.active { color: var(--green); }
+  /* Pending */
+  .pending-item { padding: 0.5rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+  .pending-item:last-child { border-bottom: none; }
+  .pending-actions { display: flex; gap: 0.3rem; }
 
-  .footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.78rem; }
+  /* Empty state */
+  .empty { text-align: center; padding: 2rem 1rem; color: var(--muted); font-size: 0.88rem; }
+  .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+  /* Toast */
+  .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; }
+  .toast {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 0.8rem 1.2rem; font-size: 0.85rem; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    animation: slideIn 0.3s ease; max-width: 360px;
+  }
+  .toast.success { border-color: var(--green); }
+  .toast.error { border-color: var(--red); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Join modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 2rem; width: 90%; max-width: 400px;
+  }
+  .modal h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+  .modal .field { margin-bottom: 0.8rem; }
+  .modal .field label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.3rem; }
+  .modal .field input {
+    width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 8px 12px; font-size: 0.88rem;
+  }
+  .modal .field input:focus { outline: none; border-color: var(--accent); }
+  .modal .actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.2rem; }
+
+  .footer { text-align: center; padding: 1.5rem; color: var(--muted); font-size: 0.75rem; }
+
+  /* Mobile */
+  @media (max-width: 600px) {
+    .header { padding: 0.8rem 1rem; }
+    .container { padding: 0.8rem; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .stat-card .value { font-size: 1.3rem; }
+    .bar-label { width: 56px; font-size: 0.72rem; }
+    th, td { padding: 0.4rem; font-size: 0.82rem; }
+    .id-bar input { width: 140px; }
+  }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1><span>Token Flex</span> Dashboard</h1>
+  <h1><em>Token Flex</em> Dashboard</h1>
   <div class="header-right">
     <span><span class="live-dot"></span>Live</span>
     <span id="last-update">--</span>
@@ -129,277 +203,350 @@
 </div>
 
 <div class="container">
-  <!-- Admin login -->
-  <div class="admin-bar">
-    <span>Your ID:</span>
-    <input type="text" id="admin-id" placeholder="user_id 입력">
-    <button class="btn btn-approve" onclick="loginAdmin()">Login</button>
-    <span class="status" id="admin-status"></span>
-  </div>
+  <!-- Identity bar -->
+  <div class="id-bar" id="id-bar"></div>
 
   <!-- Stats -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <span class="label">Active Members</span>
-      <span class="value" id="stat-players">-</span>
-    </div>
-    <div class="stat-card">
-      <span class="label">Total Tokens</span>
-      <span class="value" id="stat-total-tokens">-</span>
-      <span class="sub" id="stat-total-sub"></span>
-    </div>
-    <div class="stat-card">
-      <span class="label">Today's Leader</span>
-      <span class="value" id="stat-leader">-</span>
-      <span class="sub" id="stat-leader-sub"></span>
-    </div>
-    <div class="stat-card">
-      <span class="label">Latest Milestone</span>
-      <span class="value" id="stat-milestone">-</span>
-      <span class="sub" id="stat-milestone-sub"></span>
-    </div>
-    <div class="stat-card" id="stat-pending-card" style="display:none;">
-      <span class="label">Pending Requests</span>
-      <span class="value" id="stat-pending" style="color:var(--orange)">0</span>
-    </div>
-  </div>
+  <div class="stats-grid" id="stats-grid"></div>
 
+  <!-- Main grid -->
   <div class="main-grid">
+    <!-- Left -->
     <div>
-      <!-- Bar Chart -->
-      <div class="panel" style="margin-bottom:1.5rem;">
+      <div class="panel" id="chart-panel">
         <div class="panel-title">Token Usage Race</div>
         <div class="bar-chart" id="bar-chart"></div>
       </div>
-
-      <!-- Ranking Table -->
-      <div class="panel" style="margin-bottom:1.5rem;">
+      <div class="panel" id="rank-panel">
         <div class="panel-title">Leaderboard</div>
-        <table>
-          <thead><tr><th style="width:3rem">#</th><th>User</th><th style="text-align:right">Tokens</th><th style="text-align:right">Last Report</th></tr></thead>
-          <tbody id="rank-body"></tbody>
-        </table>
+        <div id="rank-content"></div>
       </div>
-
-      <!-- Pending Approvals (관리자만 보임) -->
       <div class="panel" id="pending-panel" style="display:none;">
-        <div class="panel-title">Pending Join Requests <span class="badge" id="pending-badge">0</span></div>
+        <div class="panel-title">참여 신청 대기 <span class="badge" id="pending-badge">0</span></div>
         <div id="pending-list"></div>
       </div>
     </div>
-
-    <!-- Right sidebar -->
+    <!-- Right -->
     <div>
-      <div class="panel" style="margin-bottom:1.5rem;">
-        <div class="panel-title">Activity Feed</div>
-        <div class="feed" id="activity-feed">
-          <div class="feed-item"><span class="feed-icon">⏳</span><span class="feed-text" style="color:var(--muted)">Waiting for data...</span></div>
-        </div>
+      <div class="panel">
+        <div class="panel-title">Activity</div>
+        <div class="feed" id="activity-feed"></div>
       </div>
-
       <div class="panel">
         <div class="panel-title">Members</div>
-        <div id="members-list" style="font-size:0.88rem;"></div>
+        <div id="members-list"></div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="footer">Token Flex Dashboard — Anthropic API Token Usage Competition</div>
+<div class="footer">Token Flex Dashboard &mdash; Anthropic API Token Usage Competition</div>
+<div class="toast-container" id="toasts"></div>
+<div id="modal-root"></div>
 
 <script>
 const POLL = 15_000;
-const API = window.location.origin;
-let adminId = localStorage.getItem('tf_admin') || '';
-let adminRole = '';
+const API = location.origin;
+let myId = localStorage.getItem('tf_user') || '';
+let myRole = '';
+let myRank = null;
 
-function formatTokens(n) {
-  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
-  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
-  return n.toString();
-}
-function formatFull(n) { return n.toLocaleString(); }
-function timeAgo(iso) {
-  const d = (Date.now() - new Date(iso).getTime()) / 1000;
-  if (d < 60) return 'just now';
-  if (d < 3600) return Math.floor(d/60) + 'm ago';
-  if (d < 86400) return Math.floor(d/3600) + 'h ago';
-  return Math.floor(d/86400) + 'd ago';
+// ========== Formatters ==========
+const fmt = n => n >= 1e9 ? (n/1e9).toFixed(1)+'B' : n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(1)+'K' : ''+n;
+const fmtFull = n => n.toLocaleString();
+const ago = iso => { const s=(Date.now()-new Date(iso))/1e3; return s<60?'방금':s<3600?Math.floor(s/60)+'분 전':s<86400?Math.floor(s/3600)+'시간 전':Math.floor(s/86400)+'일 전'; };
+const medals = {1:'🥇',2:'🥈',3:'🥉'};
+const roleBadge = {owner:'<span class="role-owner">OWNER</span>',admin:'<span class="role-admin">ADMIN</span>'};
+const roleTag = {owner:'role-tag-owner',admin:'role-tag-admin',member:'role-tag-member'};
+const roleLabel = {owner:'그룹장',admin:'관리자',member:'멤버'};
+
+// ========== Toast ==========
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity 0.3s'; setTimeout(()=>el.remove(),300); }, 3000);
 }
 
-const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
-const roleBadge = { owner: '<span class="role-owner">OWNER</span>', admin: '<span class="role-admin">ADMIN</span>' };
+// ========== Modal ==========
+function showModal(html) { document.getElementById('modal-root').innerHTML = html; }
+function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
 
-let prevBoard = [], activityItems = [];
-
-function addActivity(icon, text) {
-  activityItems.unshift({ icon, text, time: new Date().toISOString() });
-  if (activityItems.length > 50) activityItems.length = 50;
-  renderFeed();
-}
-function renderFeed() {
-  const el = document.getElementById('activity-feed');
-  if (!activityItems.length) return;
-  el.innerHTML = activityItems.map(a =>
-    `<div class="feed-item"><span class="feed-icon">${a.icon}</span><div><div class="feed-text">${a.text}</div><div class="feed-time">${timeAgo(a.time)}</div></div></div>`
-  ).join('');
-}
-function detectChanges(old, nu) {
-  const m = {}; old.forEach(e => m[e.user_id] = e);
-  for (const e of nu) {
-    const o = m[e.user_id];
-    if (!o) addActivity('🆕', `<b>${e.user_id}</b> joined the race!`);
-    else if (e.used_tokens > o.used_tokens) addActivity('📈', `<b>${e.user_id}</b> +${formatTokens(e.used_tokens - o.used_tokens)} tokens`);
+// ========== Identity bar ==========
+function renderIdBar() {
+  const bar = document.getElementById('id-bar');
+  if (!myId) {
+    bar.innerHTML = `
+      <div class="id-bar-logged-out">
+        <label>참여하려면 ID를 입력하세요</label>
+        <input type="text" id="login-input" placeholder="user_id" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="btn btn-primary" onclick="doLogin()">입장</button>
+      </div>
+      <div class="hint">기존 멤버는 ID 입력만으로 대시보드를 이용할 수 있고, 신규 유저는 참여 신청이 가능합니다.</div>`;
+  } else {
+    const rTag = roleTag[myRole] || 'role-tag-member';
+    const rLbl = roleLabel[myRole] || myRole || '비멤버';
+    const rankText = myRank ? `#${myRank}` : '-';
+    const actions = [];
+    if (!myRole) {
+      actions.push(`<button class="btn btn-primary" onclick="showJoinModal()">참여 신청</button>`);
+    } else {
+      actions.push(`<button class="btn btn-ghost btn-sm" onclick="doLeave()">탈퇴</button>`);
+    }
+    actions.push(`<button class="btn btn-ghost btn-sm" onclick="doLogout()">로그아웃</button>`);
+    bar.innerHTML = `
+      <div class="id-bar-logged-in">
+        <div class="user-info">
+          <span class="user-name">${myId}</span>
+          <span class="user-role ${rTag}">${rLbl}</span>
+          <span class="my-rank-mini">순위 <b>${rankText}</b></span>
+        </div>
+        <div style="display:flex;gap:0.4rem;align-items:center;">${actions.join('')}</div>
+      </div>`;
   }
-  if (nu.length && old.length && nu[0].user_id !== old[0]?.user_id)
-    addActivity('👑', `<b>${nu[0].user_id}</b> took the #1 spot!`);
 }
 
-// Admin login
-function loginAdmin() {
-  adminId = document.getElementById('admin-id').value.trim();
-  if (adminId) { localStorage.setItem('tf_admin', adminId); fetchAndRender(); }
+function doLogin() {
+  const input = document.getElementById('login-input');
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) return;
+  myId = val;
+  localStorage.setItem('tf_user', myId);
+  fetchAndRender();
+}
+function doLogout() {
+  myId = ''; myRole = ''; myRank = null;
+  localStorage.removeItem('tf_user');
+  renderIdBar();
+  fetchAndRender();
 }
 
-// Admin actions
-async function doAction(endpoint, body) {
+// ========== Join modal ==========
+function showJoinModal() {
+  showModal(`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>Token Flex 참여</h2>
+        <div class="field">
+          <label>User ID</label>
+          <input type="text" id="join-uid" value="${myId}" readonly style="opacity:0.7">
+        </div>
+        <div class="field">
+          <label>표시 이름 (선택)</label>
+          <input type="text" id="join-name" placeholder="예: 홍길동">
+        </div>
+        <div class="field">
+          <label>초대 코드 (없으면 관리자 승인 필요)</label>
+          <input type="text" id="join-code" placeholder="초대코드 입력">
+        </div>
+        <div class="actions">
+          <button class="btn btn-ghost" onclick="closeModal()">취소</button>
+          <button class="btn btn-primary" onclick="submitJoin()">참여 신청</button>
+        </div>
+      </div>
+    </div>`);
+}
+async function submitJoin() {
+  const uid = document.getElementById('join-uid').value.trim();
+  const name = document.getElementById('join-name').value.trim();
+  const code = document.getElementById('join-code').value.trim();
   try {
-    const r = await fetch(API + endpoint, {
-      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {}),
+    const r = await fetch(API+'/join', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id:uid, display_name:name, invite_code:code}),
     });
     const d = await r.json();
-    if (!r.ok) alert(d.detail || 'Error');
-    else fetchAndRender();
-  } catch(e) { alert('Request failed'); }
+    closeModal();
+    if (r.ok) {
+      if (d.status === 'pending') toast('참여 신청 완료! 관리자 승인을 기다려주세요.','success');
+      else toast('참여 완료! 환영합니다!','success');
+      fetchAndRender();
+    } else {
+      toast(d.detail || '참여 실패','error');
+    }
+  } catch { toast('요청 실패','error'); }
 }
 
-function approveUser(uid) { doAction(`/approve/${uid}?actor=${adminId}`); }
+// ========== Leave ==========
+async function doLeave() {
+  if (!confirm(`정말 탈퇴하시겠습니까?`)) return;
+  try {
+    const r = await fetch(API+`/leave/${myId}`, {method:'POST'});
+    const d = await r.json();
+    if (r.ok) { toast('탈퇴했습니다. 다시 돌아오세요!','success'); fetchAndRender(); }
+    else toast(d.detail || '탈퇴 실패','error');
+  } catch { toast('요청 실패','error'); }
+}
+
+// ========== Admin actions ==========
+async function adminAction(endpoint) {
+  try {
+    const r = await fetch(API + endpoint, {method:'POST'});
+    const d = await r.json();
+    if (r.ok) { toast('완료','success'); fetchAndRender(); }
+    else toast(d.detail || '실패','error');
+  } catch { toast('요청 실패','error'); }
+}
+function approveUser(uid) { adminAction(`/approve/${uid}?actor=${myId}`); }
 function rejectUser(uid) {
-  const reason = prompt('거절 사유 (선택):', '');
-  doAction(`/reject/${uid}?actor=${adminId}&reason=${encodeURIComponent(reason || '')}`);
+  const reason = prompt('거절 사유 (선택):','');
+  adminAction(`/reject/${uid}?actor=${myId}&reason=${encodeURIComponent(reason||'')}`);
 }
 function kickUser(uid) {
   if (!confirm(`${uid} 님을 추방하시겠습니까?`)) return;
-  const reason = prompt('추방 사유 (선택):', '');
-  doAction(`/kick/${uid}?actor=${adminId}&reason=${encodeURIComponent(reason || '')}`);
+  const reason = prompt('추방 사유 (선택):','');
+  adminAction(`/kick/${uid}?actor=${myId}&reason=${encodeURIComponent(reason||'')}`);
 }
 
+// ========== Activity ==========
+let prevBoard = [], activityItems = [];
+function addActivity(icon, text) {
+  activityItems.unshift({icon, text, time: new Date().toISOString()});
+  if (activityItems.length > 50) activityItems.length = 50;
+}
+function renderFeed() {
+  const el = document.getElementById('activity-feed');
+  if (!activityItems.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📡</div>아직 활동이 없습니다</div>';
+    return;
+  }
+  el.innerHTML = activityItems.map(a =>
+    `<div class="feed-item"><span class="feed-icon">${a.icon}</span><div><div>${a.text}</div><div class="feed-time">${ago(a.time)}</div></div></div>`
+  ).join('');
+}
+function detectChanges(old, nu) {
+  const m = {}; old.forEach(e => m[e.user_id]=e);
+  for (const e of nu) {
+    const o = m[e.user_id];
+    if (!o) addActivity('🆕',`<b>${e.user_id}</b> 참여!`);
+    else if (e.used_tokens > o.used_tokens) addActivity('📈',`<b>${e.user_id}</b> +${fmt(e.used_tokens-o.used_tokens)} tokens`);
+  }
+  if (nu.length && old.length && nu[0].user_id !== old[0]?.user_id) addActivity('👑',`<b>${nu[0].user_id}</b> 1위 등극!`);
+}
+
+// ========== Main render ==========
 async function fetchAndRender() {
   try {
-    const [rankR, statsR, membersR, pendingR] = await Promise.all([
-      fetch(API + '/rank'), fetch(API + '/stats'), fetch(API + '/members'), fetch(API + '/pending'),
+    const [rankR,statsR,membersR,pendingR] = await Promise.all([
+      fetch(API+'/rank'), fetch(API+'/stats'), fetch(API+'/members'), fetch(API+'/pending'),
     ]);
     const rank = await rankR.json(), stats = await statsR.json();
     const members = (await membersR.json()).members || [];
     const pending = (await pendingR.json()).pending || [];
     const board = rank.board || [];
 
-    // Detect admin role
-    const me = members.find(m => m.user_id === adminId);
-    adminRole = me ? me.role : '';
-    const isAdmin = adminRole === 'owner' || adminRole === 'admin';
+    // My info
+    const me = members.find(m => m.user_id === myId);
+    myRole = me ? me.role : '';
+    const myBoard = board.find(b => b.user_id === myId);
+    myRank = myBoard ? myBoard.rank : null;
+    const isAdmin = myRole === 'owner' || myRole === 'admin';
 
-    const statusEl = document.getElementById('admin-status');
-    if (adminId && me) {
-      const rLabel = {owner:'그룹장', admin:'관리자', member:'멤버'}[adminRole] || adminRole;
-      statusEl.textContent = `${adminId} (${rLabel})`;
-      statusEl.className = 'status active';
-    } else if (adminId) {
-      statusEl.textContent = 'Not a member';
-      statusEl.className = 'status';
-    } else {
-      statusEl.textContent = '';
-    }
+    renderIdBar();
 
     if (prevBoard.length) detectChanges(prevBoard, board);
     prevBoard = JSON.parse(JSON.stringify(board));
 
-    // Stats
-    document.getElementById('stat-players').textContent = stats.total_users;
-    document.getElementById('stat-total-tokens').textContent = formatTokens(stats.total_tokens);
-    document.getElementById('stat-total-sub').textContent = formatFull(stats.total_tokens) + ' tokens';
-    if (stats.leader) {
-      document.getElementById('stat-leader').textContent = stats.leader.user_id;
-      document.getElementById('stat-leader-sub').textContent = formatFull(stats.leader.used_tokens) + ' tokens';
+    // === Stats cards ===
+    const statsHtml = [];
+    if (myId && me) {
+      statsHtml.push(`<div class="stat-card my-card">
+        <div class="label">내 순위</div>
+        <div class="value">${myRank ? '#'+myRank : '-'}</div>
+        <div class="sub">${myBoard ? fmtFull(myBoard.used_tokens)+' tokens' : '보고 대기'}</div>
+      </div>`);
     }
-    if (stats.latest_milestone) {
-      document.getElementById('stat-milestone').textContent = stats.latest_milestone.user_id;
-      document.getElementById('stat-milestone-sub').textContent = formatFull(stats.latest_milestone.milestone) + ' reached';
+    statsHtml.push(
+      `<div class="stat-card"><div class="label">활성 멤버</div><div class="value">${stats.total_users}</div></div>`,
+      `<div class="stat-card"><div class="label">전체 토큰</div><div class="value">${fmt(stats.total_tokens)}</div><div class="sub">${fmtFull(stats.total_tokens)}</div></div>`,
+      `<div class="stat-card"><div class="label">오늘의 리더</div><div class="value">${stats.today_leader?stats.today_leader.user_id:'-'}</div><div class="sub">${stats.today_leader?fmtFull(stats.today_leader.tokens)+' tokens':''}</div></div>`,
+      `<div class="stat-card"><div class="label">최근 마일스톤</div><div class="value">${stats.latest_milestone?stats.latest_milestone.user_id:'-'}</div><div class="sub">${stats.latest_milestone?fmtFull(stats.latest_milestone.milestone)+' 달성':''}</div></div>`,
+    );
+    if (isAdmin && stats.pending_count > 0) {
+      statsHtml.push(`<div class="stat-card"><div class="label">승인 대기</div><div class="value" style="color:var(--orange)">${stats.pending_count}</div></div>`);
     }
+    document.getElementById('stats-grid').innerHTML = statsHtml.join('');
 
-    // Pending stat card (admin only)
-    const pendCard = document.getElementById('stat-pending-card');
-    if (isAdmin && pending.length > 0) {
-      pendCard.style.display = '';
-      document.getElementById('stat-pending').textContent = pending.length;
+    // === Bar chart ===
+    const chartEl = document.getElementById('bar-chart');
+    if (!board.length) {
+      chartEl.innerHTML = '<div class="empty"><div class="empty-icon">📊</div>아직 데이터가 없습니다</div>';
     } else {
-      pendCard.style.display = 'none';
+      const mx = board[0].used_tokens;
+      chartEl.innerHTML = board.slice(0,10).map(e => {
+        const pct = Math.max((e.used_tokens/mx)*100, 3);
+        const cls = e.rank<=3 ? `r${e.rank}` : 'rn';
+        const isMy = e.user_id === myId;
+        return `<div class="bar-row${isMy?' my-bar':''}"><span class="bar-label">${e.user_id}</span><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%">${fmt(e.used_tokens)}</div></div></div>`;
+      }).join('');
     }
 
-    // Leaderboard table
-    document.getElementById('rank-body').innerHTML = board.map(e => {
-      const medal = medals[e.rank] || e.rank;
-      return `<tr>
-        <td class="rank-medal">${medal}</td>
-        <td class="user-id">${e.user_id}</td>
-        <td class="tokens" style="text-align:right">${formatFull(e.used_tokens)}</td>
-        <td class="time-ago" style="text-align:right">${timeAgo(e.last_reported_at)}</td>
-      </tr>`;
-    }).join('');
+    // === Leaderboard ===
+    const rankContent = document.getElementById('rank-content');
+    if (!board.length) {
+      rankContent.innerHTML = '<div class="empty"><div class="empty-icon">🏆</div>아직 참여자가 없습니다<br><span style="font-size:0.8rem">멤버가 클라이언트 데몬을 실행하면 여기에 표시됩니다</span></div>';
+    } else {
+      rankContent.innerHTML = `<table>
+        <thead><tr><th style="width:2.5rem">#</th><th>유저</th><th style="text-align:right">토큰</th><th style="text-align:right">최근 보고</th></tr></thead>
+        <tbody>${board.map(e => {
+          const medal = medals[e.rank] || e.rank;
+          const isMy = e.user_id === myId;
+          return `<tr class="${isMy?'my-row':''}">
+            <td class="rank-medal">${medal}</td>
+            <td style="font-weight:600">${e.user_id}${isMy?' <span style="color:var(--accent);font-size:0.72rem">YOU</span>':''}</td>
+            <td class="tokens" style="text-align:right">${fmtFull(e.used_tokens)}</td>
+            <td class="time-ago" style="text-align:right">${ago(e.last_reported_at)}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+    }
 
-    // Bar chart
-    const mx = board.length ? board[0].used_tokens : 1;
-    document.getElementById('bar-chart').innerHTML = board.slice(0,10).map(e => {
-      const pct = Math.max((e.used_tokens / mx) * 100, 3);
-      const cls = e.rank <= 3 ? `r${e.rank}` : 'rn';
-      return `<div class="bar-row"><span class="bar-label">${e.user_id}</span><div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%">${formatTokens(e.used_tokens)}</div></div></div>`;
-    }).join('');
-
-    // Members panel (with role badges + kick for admin)
+    // === Members ===
     const mList = document.getElementById('members-list');
-    if (members.length) {
+    if (!members.length) {
+      mList.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>멤버가 없습니다</div>';
+    } else {
       mList.innerHTML = members.map(m => {
         const name = m.display_name || m.user_id;
         const badge = roleBadge[m.role] || '';
-        const inv = m.invited_by ? `<span style="color:var(--muted);font-size:0.72rem"> inv. ${m.invited_by}</span>` : '';
-        const kickBtn = (isAdmin && m.role !== 'owner' && m.user_id !== adminId)
-          ? `<button class="btn btn-kick" onclick="kickUser('${m.user_id}')">Kick</button>` : '';
-        return `<div class="member-row">
-          <div><strong>${name}</strong> ${badge} <span style="color:var(--muted);font-size:0.82rem">${m.user_id}</span>${inv}</div>
-          <div style="display:flex;align-items:center;gap:0.5rem;"><span class="time-ago">${timeAgo(m.joined_at)}</span>${kickBtn}</div>
+        const inv = m.invited_by ? `<span style="color:var(--muted);font-size:0.7rem"> inv.${m.invited_by}</span>` : '';
+        const isMy = m.user_id === myId;
+        const kickBtn = (isAdmin && m.role !== 'owner' && m.user_id !== myId)
+          ? `<button class="btn btn-danger btn-sm" onclick="kickUser('${m.user_id}')">추방</button>` : '';
+        return `<div class="member-row${isMy?' my-member':''}">
+          <div><strong>${name}</strong> ${badge} <span style="color:var(--muted);font-size:0.78rem">${m.user_id}</span>${inv}</div>
+          <div style="display:flex;align-items:center;gap:0.4rem"><span class="time-ago">${ago(m.joined_at)}</span>${kickBtn}</div>
         </div>`;
       }).join('');
-    } else {
-      mList.innerHTML = '<span style="color:var(--muted)">No members yet</span>';
     }
 
-    // Pending panel (admin only)
+    // === Pending (admin) ===
     const pp = document.getElementById('pending-panel');
-    if (isAdmin && pending.length > 0) {
+    if (isAdmin && pending.length) {
       pp.style.display = '';
       document.getElementById('pending-badge').textContent = pending.length;
       document.getElementById('pending-list').innerHTML = pending.map(p => {
         const name = p.display_name || p.user_id;
         const inv = p.invited_by ? ` (추천: ${p.invited_by})` : '';
         return `<div class="pending-item">
-          <div><strong>${name}</strong> <span style="color:var(--muted)">${p.user_id}</span>${inv}<br><span class="time-ago">신청: ${timeAgo(p.requested_at)}</span></div>
+          <div><strong>${name}</strong> <span style="color:var(--muted)">${p.user_id}</span>${inv}<br><span class="time-ago">신청: ${ago(p.requested_at)}</span></div>
           <div class="pending-actions">
-            <button class="btn btn-approve" onclick="approveUser('${p.user_id}')">Approve</button>
-            <button class="btn btn-reject" onclick="rejectUser('${p.user_id}')">Reject</button>
+            <button class="btn btn-success btn-sm" onclick="approveUser('${p.user_id}')">승인</button>
+            <button class="btn btn-danger btn-sm" onclick="rejectUser('${p.user_id}')">거절</button>
           </div>
         </div>`;
       }).join('');
-    } else {
-      pp.style.display = 'none';
-    }
+    } else { pp.style.display = 'none'; }
 
-    document.getElementById('last-update').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    // === Feed ===
+    renderFeed();
+
+    document.getElementById('last-update').textContent = new Date().toLocaleTimeString() + ' 갱신';
   } catch (err) { console.error('Fetch error:', err); }
 }
 
-// Restore admin from localStorage
-if (adminId) document.getElementById('admin-id').value = adminId;
 fetchAndRender();
 setInterval(fetchAndRender, POLL);
 </script>
